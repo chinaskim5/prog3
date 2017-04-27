@@ -6,6 +6,7 @@
 int encode(uint32_t code_point, CodeUnits *code_units)
 {
 	int code_128 = 128, code_63 = 63;
+	size_t i;
 
 	if (code_point <= 0x7F) {
 		code_units->legth = 1;
@@ -22,12 +23,12 @@ int encode(uint32_t code_point, CodeUnits *code_units)
 	}
 
 	code_units->code[0] = code_128;
-	for (size_t i = 1; i < code_units->legth; i++) {
+	for (i = 1; i < code_units->legth; i++) {
 		code_units->code[0] = code_units->code[0] | (code_128 >> i);
 	}
 	code_units->code[0] = code_units->code[0] | (code_point >> 6 * (code_units->legth - 1));
 
-	for (size_t i = 1; i < code_units->legth; i++) {
+	for (i = 1; i < code_units->legth; i++) {
 		code_units->code[i] = code_128 | ((code_point >> (6 * (code_units->legth - i - 1))) & code_63);
 	}
 
@@ -37,6 +38,7 @@ int encode(uint32_t code_point, CodeUnits *code_units)
 uint32_t decode(const CodeUnits *code_units)
 {
 	uint32_t code_point = 0;
+	size_t i;
 
 	if (code_units->legth == 1) {
 		code_point = code_units->code[0];
@@ -50,7 +52,7 @@ uint32_t decode(const CodeUnits *code_units)
 		return -1;
 	}
 
-	for (size_t i = 1; i < code_units->legth; i++) {
+	for (i = 1; i < code_units->legth; i++) {
 		code_point = (code_point << 6) | (code_units->code[i] & 0x7f);
 	}
 
@@ -59,6 +61,7 @@ uint32_t decode(const CodeUnits *code_units)
 
 int read_next_code_unit(FILE *in, CodeUnits *code_units)
 {
+    size_t i;
 	while (!feof(in)) {
 		fread(&code_units->code[0], 1, 1, in);
 		if (code_units->code[0] <= 0x7f) {
@@ -73,7 +76,7 @@ int read_next_code_unit(FILE *in, CodeUnits *code_units)
 			continue;
 		}
 
-		for (size_t i = 1; i < code_units->legth; i++) {
+		for (i = 1; i < code_units->legth; i++) {
 			fread(&code_units->code[i], 1, 1, in);
 
 			if ((code_units->code[i] & 0xc0) != 0x80) {
