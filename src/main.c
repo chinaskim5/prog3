@@ -1,47 +1,31 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
 #include "coder.h"
 #include "command.h"
-#include <string.h>
-
-/*int main(int argc, char *argv[])
-{
-
-	if (strcmp("encode", argv[1]) == 0) {
-		encode_file(argv[2], argv[3]);
-	} else if (strcmp("decode", argv[1]) == 0) {
-		decode_file(argv[2], argv[3]);
-	} else {
-		printf("Неверен первый аргумент\n");
-	}
-
-	return 0;
-}*/
-
 int main(int argc, char *argv[])
 {
-	
-	if (argc != 4) {
-		printf("Usage:\n"
-		"coder encode <in-file-name> <out-file-name>\n"
-		"coder decode <in-file-name> <out-file-name>\n");
-		return -1;
+	if (!argv[1] || !argv[2] || !argv[3]) {
+        printf("ERROR\n");
+        return 0;
+    }
+    
+    if (strcmp(argv[1], "encode") == 0) {
+        int j = encode_file(argv[2], argv[3]);
+        if(j == -1){
+        	printf("Error in file");
+   			}
+   	} else{ 
+		if (strcmp(argv[1], "decode") == 0) {
+			int i = decode_file(argv[2], argv[3]);
+    		if(i == -1){
+    			printf("Error in file");
+    			}
+    	} else{
+        	printf("ERROR\n");        	
+       		return 0;
+    	}
 	}
-	
-	if(!strcmp(argv[1], "decode")) {
-		if (decode_file(argv[2], argv[3])) {
-			printf("Error decode file\n");
-			return -1;
-		} 
-	} else if(!strcmp(argv[1], "encode")) {
-		if (encode_file(argv[2], argv[3])) {
-			printf("Error encode file\n");
-			return -1;
-		} 
-	} else {
-		printf("Usage:\n"
-		"coder encode <in-file-name> <out-file-name>\n"
-		"coder decode <in-file-name> <out-file-name>\n");
-	}
-	
-	return 0;
+    return 0;
 }

@@ -1,22 +1,16 @@
-#ifndef CODER_H
-#define CODER_H
-#include <stddef.h>
-#include <inttypes.h>
-#include "command.h"
-#include <stdio.h>
-
-enum {
+#ifndef coder_h
+#define coder_h
+#include <string.h>
+#include <stdint.h>
+enum{
 	MaxCodeLength = 4
 };
 
-typedef struct{
+typedef struct {
 	uint8_t code[MaxCodeLength];
-	size_t legth;
+	size_t length;
 } CodeUnits;
 
 int encode(uint32_t code_point, CodeUnits *code_units);
-uint32_t decode(const CodeUnits *code_units);
-int read_next_code_unit(FILE *in, CodeUnits *code_units);
-int write_code_unit(FILE *out, const CodeUnits *code_unit);
-
-#endif
+uint32_t decode(const CodeUnits *code_unit);
+#endif	

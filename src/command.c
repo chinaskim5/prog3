@@ -1,62 +1,126 @@
-#include "coder.h"
-#include "command.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <inttypes.h>
+#include "command.h"
+#include "coder.h"
+#include <string.h>
+#include <stdint.h>
 
-int encode_file(const char *in_file_name, const char *out_file_name)
+
+int encode_file(const char *in_file, const char *out_file)
 {
-	FILE *in, *out; fopen(in_file_name, "r");
-	if (!(in = fopen(in_file_name, "r"))) {
-		return -1;
+
+    FILE *in = NULL, *out = NULL;
+    in = fopen(in_file, "r");
+
+    if (!in) {
+        printf("Error with IN file\n");
+        return -1;
+    }
+
+    out = fopen(out_file, "wb");
+    uint32_t point;
+    CodeUnits *code_unit = (CodeUnits*)malloc(sizeof(CodeUnits));
+
+    while (!feof(in)) {
+        if (!fscanf(in, "%x", &point)) {
+           		printf("Error with scan\n");
+				fclose(in);
+				fclose(out);           		
+           		return -1;
+        }
+
+			if(feof(in))
+				break;
+				
+            int enc = encode(point, code_unit);
+    	    
+    	    if (enc != -1) {
+    	    	switch (code_unit->length){
+    	    	case 1:
+    	    		fwrite(code_unit->code, sizeof(uint8_t), 1, out);
+        	    break;	
+        	    case 2:
+        	    	fwrite(code_unit->code, sizeof(uint8_t), 2, out);
+        	    break;
+        	    case 3:
+        	    	fwrite(code_unit->code, sizeof(uint8_t), 3, out);
+        	    break;	
+    	    	case 4:
+        	    	fwrite(code_unit->code, sizeof(uint8_t), 4, out);
+        	    break;
+        	}
+    			
+    	}
 	}
-	uint32_t code_point;
-	CodeUnits code_units;
+    fclose(in);
+    fclose(out);
 
-	fscanf(in, "%" SCNx32, &code_point);
-	fclose(in);
-
-	//printf("%" "x\n", code_point);
-
-	if (encode(code_point, &code_units) == -1) {
-		return -1;
-	}
-
-	if (!(out = fopen(out_file_name, "w"))) {
-	    return -1;
-	}
-	write_code_unit(out, &code_units);
-	fclose(out);
-
-	return 0;
+    return 0;
 }
 
-int decode_file(const char *in_file_name, const char *out_file_name)
+
+int decode_file(const char *in_file, const char *out_file)
 {
-	FILE *in, *out; 
-	if (!(in = fopen(in_file_name, "r"))) {
-		return -1;
-	}
-	CodeUnits code_units;
-	uint32_t code_point;
+    FILE *in = NULL, *out = NULL;
+    in = fopen(in_file, "rb");
 
-	if (read_next_code_unit(in, &code_units) == -1) {
-		return -1;
-	}
-
-	code_point = decode(&code_units);
-	if (code_point == -1) {
-		return -1;
-	}
-
-	if (!(out = fopen(out_file_name, "w"))) {
-	    return -1;
-	}
-	fprintf(out, "%" "x", code_point);
-	fclose(out);
-	fclose(in);
-
-	return 0;
-}
+    if (!in) {
+        printf("Error with open\n");
+        return -1;
+    }
     
     
-    
+	out = fopen(out_file, "w");
+	uint32_t point;
+	CodeUnits *code_unit = (CodeUnits*)malloc(sizeof(CodeUnits));
 	
+	while(!feof(in)){
+		fread(&code_unit->code[0], sizeof(uint8_t), 1, in);
+		int j = 0, f = 1;
+		if((code_unit->code[0] & 248) == 240){
+			j = 3;
+		}else{ 
+			if((code_unit->code[0] & 240) == 224){
+				j = 2;			
+			}else{ 
+				if((code_unit->code[0] & 224) == 192){
+					j = 1;
+				}else{ 
+					if((code_unit->code[0] & 128) == 0){
+						j = 0;
+					}else{
+						j = -1;
+						code_unit->code[0] = 0;								
+					}
+				}
+			}
+		}
+			
+		while((j > 0)&&(!feof(in))){
+			fread(&code_unit->code[f], sizeof(uint8_t), 1, in);
+			if((code_unit->code[f] & 192) == 128){
+				f += 1;
+				j -= 1;
+			}
+		}	
+					
+				
+		if(feof(in))
+			break;
+			
+		if(j == 0){
+			int dec = decode(code_unit);
+			printf("%x\n", dec);
+			if(dec != -1){
+				fprintf(out, "%x\n", dec);
+			}else{
+				printf("Error with encode");
+		}	
+		}
+	}
+    fclose(in);
+    fclose(out);
+
+    return 0;
+}
